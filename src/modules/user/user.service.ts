@@ -1,0 +1,95 @@
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { CreateUserDto, LoginDto } from './dto/user.dto';
+
+import { UserRepo } from '../../repositories/user.repo';
+import { successfulResponse } from '../../common/utils/response/successResponse';
+import { decrypt, encrypt } from '../../common/utils/security/encrypt.service';
+import { compare, hash } from '../../common/utils/security/hash.service';
+import { UserDocument } from '../../DB/models/user.model';
+import { SMTPService } from '../../common/service/smtp/smtp.service';
+import { randomInt, randomUUID } from 'crypto';
+import { TokenService } from '../../common/service/JWT/JWT.service';
+import { RedisService } from '../../common/service/redis/redis.service';
+import { eventEmitter } from '../../common/service/smtp/email.event';
+import { EventsEnum } from '../../common/enum/events.enum';
+
+@Injectable()
+export class UserService {
+  constructor(
+    private _userModel: UserRepo,
+    private smtp: SMTPService,
+    private jwt: TokenService,
+    private redis: RedisService,
+  ) {}
+  //helpers
+  async generateTokens(user) {
+    const Jti = randomUUID();
+    const accessToken = await this.jwt.generateAccessToken(
+      user._id,
+      user.email,
+      Jti,
+    );
+    const refreshToken = await this.jwt.generateAccessToken(
+      user._id,
+      user.email,
+      Jti,
+    );
+    return { accessToken, refreshToken };
+  }
+  //api services
+  async createUser(body: CreateUserDto) {
+    const { email, password, firstName, lastName, phone, gender } = body;
+    const isExist = await this._userModel.findOne({
+      email: body.email,
+    });
+    if (isExist) {
+      throw new ConflictException('user already exists');
+    }
+    let user: UserDocument;
+    console.log({ email });
+
+    try {
+      user = await this._userModel.create({
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        gender,
+      });
+    } catch (e) {
+      console.log(e);
+
+      throw new BadRequestException('failed to create user');
+    }
+    const otp = randomInt(100000, 999999);
+    eventEmitter.emit(EventsEnum.sendEmail, async () => {
+      await this.smtp.sendOTP(user.email, 'otp', otp);
+      await this.redis.setValue(this.redis.otpCodeKey(user.email), otp, {
+        EX: 300,
+      });
+    });
+
+    return successfulResponse('otp has been sent to your email', 201);
+  }
+  async login(body: LoginDto) {
+    const { email, password } = body;
+    const user = await this._userModel.findOne({ email }, { password: 1 });
+    if (!user) {
+      throw new UnauthorizedException('invalid email/password');
+    }
+    const isValid = await compare(password, user.password);
+    if (!isValid) {
+      throw new UnauthorizedException('invalid email/password');
+    }
+    const tokens = await this.generateTokens(user);
+    return successfulResponse('user loggedIn', 200, {
+      ...tokens,
+    });
+  }
+}
