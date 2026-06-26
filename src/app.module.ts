@@ -5,7 +5,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserModule } from './modules/user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { redisModule } from './common/service/redis/redis.module';
-
+import { MulterModule } from '@nestjs/platform-express';
+import multer from 'multer';
+import { S3Service } from './common/service/s3/s3.service';
 
 @Module({
   imports: [
@@ -13,6 +15,7 @@ import { redisModule } from './common/service/redis/redis.module';
       envFilePath: ['.env.development', '.env.production'],
       isGlobal: true,
     }),
+
     UserModule,
     redisModule,
     MongooseModule.forRoot(process.env.DB_URI!, {
@@ -24,6 +27,6 @@ import { redisModule } from './common/service/redis/redis.module';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, S3Service],
 })
 export class AppModule {}

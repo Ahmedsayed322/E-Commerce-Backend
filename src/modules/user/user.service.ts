@@ -13,14 +13,16 @@ import { compare, hash } from '../../common/utils/security/hash.service';
 import { UserDocument } from '../../DB/models/user.model';
 import { SMTPService } from '../../common/service/smtp/smtp.service';
 import { randomInt, randomUUID } from 'crypto';
-import { TokenService } from '../../common/service/JWT/JWT.service';
+import { TokenService } from '../../common/service/token/token.service';
 import { RedisService } from '../../common/service/redis/redis.service';
 import { eventEmitter } from '../../common/service/smtp/email.event';
 import { EventsEnum } from '../../common/enum/events.enum';
+import { S3Service } from '../../common/service/s3/s3.service';
 
 @Injectable()
 export class UserService {
   constructor(
+    private s3: S3Service,
     private _userModel: UserRepo,
     private smtp: SMTPService,
     private jwt: TokenService,
@@ -34,7 +36,7 @@ export class UserService {
       user.email,
       Jti,
     );
-    const refreshToken = await this.jwt.generateAccessToken(
+    const refreshToken = await this.jwt.generateRefreshToken(
       user._id,
       user.email,
       Jti,
@@ -79,7 +81,10 @@ export class UserService {
   }
   async login(body: LoginDto) {
     const { email, password } = body;
-    const user = await this._userModel.findOne({ email }, { password: 1 });
+    const user = await this._userModel.findOne(
+      { email },
+      { password: 1, email: 1 },
+    );
     if (!user) {
       throw new UnauthorizedException('invalid email/password');
     }
@@ -90,6 +95,15 @@ export class UserService {
     const tokens = await this.generateTokens(user);
     return successfulResponse('user loggedIn', 200, {
       ...tokens,
+    });
+  }
+  async uploadFile(user: UserDocument, file: Express.Multer.File) {
+    return await this.s3.uploadFile({
+      file: file,
+      baseFolder: 'users',
+      subFolder: user._id,
+      isDiskStorage: false,
+      key: `${user._id}-${Date.now()}-pfp`,
     });
   }
 }

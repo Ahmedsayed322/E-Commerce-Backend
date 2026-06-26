@@ -1,3 +1,4 @@
+import { createParamDecorator } from '@nestjs/common';
 import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
@@ -15,6 +16,7 @@ export class matchKeys implements ValidatorConstraintInterface {
   }
 }
 import { registerDecorator, ValidationOptions } from 'class-validator';
+import { UserDocument } from '../../DB/models/user.model';
 
 export function IsMatch(
   constraints: string[],
@@ -32,3 +34,7 @@ export function IsMatch(
     });
   };
 }
+export const User = createParamDecorator((data: any, ctx) => {
+  const req = ctx.switchToHttp().getRequest();
+  return req.user as UserDocument;
+});
