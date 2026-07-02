@@ -41,7 +41,7 @@ export class UserController {
     return await this.userService.login(body);
   }
   @Get('profile')
-  @Auth(TokenEnum.access, [RoleEnum.user])
+  @Auth([RoleEnum.user], TokenEnum.access)
   @UseInterceptors(ResponseInterceptors)
   async getMyProfile(@User() user: UserDocument) {
     return successfulResponse('done', 200, {
@@ -62,6 +62,6 @@ export class UserController {
     @UploadedFile() file: Express.Multer.File,
   ) {
     const url = await this.userService.uploadFile(user, file);
-    return successfulResponse('image has uploaded successfully', 200, {url});
+    return successfulResponse('image has uploaded successfully', 200, { url });
   }
 }

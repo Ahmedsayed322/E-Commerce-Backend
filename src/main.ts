@@ -29,7 +29,7 @@ async function bootstrap() {
     }),
   );
   await app.listen(port, () => {
-    console.log('server is running');
+    console.log('server is running '+port);
   });
 }
 bootstrap();

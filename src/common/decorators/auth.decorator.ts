@@ -13,8 +13,8 @@ export const Roles = (Roles: RoleEnum[]) => {
   return SetMetadata(rolesKey, Roles);
 };
 export const Auth = (
-  type: TokenEnum = TokenEnum.access,
   roles: RoleEnum[] = [RoleEnum.user],
+  type: TokenEnum = TokenEnum.access,
 ) => {
   return applyDecorators(
     TokenType(type),

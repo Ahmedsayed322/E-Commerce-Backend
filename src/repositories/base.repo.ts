@@ -126,19 +126,33 @@ abstract class BaseRepository<T> {
   }) {
     page = +page! || 1;
     limit = +limit! || 10;
-    if (page < 0) page = 1;
-    if (limit < 0) limit = 10;
+    if (page < 1) page = 1;
+    if (limit < 1) limit = 10;
     const skip = (page - 1) * limit;
+
+    let query = this.model
+      .find({ ...(search ?? {}) }, undefined, opt)
+      .sort(sort)
+      .limit(limit)
+      .skip(skip);
+
+    if (populate) query = query.populate(populate);
+
     const [data, totalDoc] = await Promise.all([
-      this.model
-        .find({ ...(search ?? {}) })
-        .sort(sort)
-        .limit(limit)
-        .skip(skip)
-        .populate(populate!),
+      query,
       this.model.countDocuments(search ?? {}),
     ]);
-    return { currentPage: page, totalPages: Math.ceil(totalDoc / limit), data };
+
+    const totalPages = Math.ceil(totalDoc / limit);
+
+    return {
+      currentPage: page,
+      totalPages,
+      totalDoc,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      data,
+    };
   }
 }
 

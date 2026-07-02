@@ -8,6 +8,9 @@ import { redisModule } from './common/service/redis/redis.module';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
 import { S3Service } from './common/service/s3/s3.service';
+import { BrandsModule } from './modules/brands/brands.module';
+import { CategoryModule } from './modules/category/category.module';
+import { ProductsModule } from './modules/products/products.module';
 
 @Module({
   imports: [
@@ -25,8 +28,11 @@ import { S3Service } from './common/service/s3/s3.service';
         });
       },
     }),
+    BrandsModule,
+    CategoryModule,
+    ProductsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, S3Service],
+  providers: [AppService, S3Service,],
 })
 export class AppModule {}

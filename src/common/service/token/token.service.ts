@@ -27,20 +27,22 @@ export class TokenService {
     id: Types.ObjectId,
     email: string,
     jti: string,
+    key: string,
   ): Promise<string> => {
     return await this.jwt.signAsync(
       { id, email },
-      { privateKey: process.env.JWT_ACCESS_KEY!, jwtid: jti, expiresIn: '30m' },
+      { privateKey: key, jwtid: jti, expiresIn: '30m' },
     );
   };
   generateRefreshToken = async (
     id: Types.ObjectId,
     email: string,
     jti: string,
+    key: string,
   ): Promise<string> => {
     return await this.jwt.signAsync(
       { id, email },
-      { privateKey: process.env.JWT_REFRESH_KEY!, jwtid: jti, expiresIn: '7d' },
+      { privateKey: key, jwtid: jti, expiresIn: '7d' },
     );
   };
   verifyToken = async (

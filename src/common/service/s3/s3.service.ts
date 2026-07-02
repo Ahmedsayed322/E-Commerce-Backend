@@ -87,8 +87,9 @@ export class S3Service {
     return op.Key as string;
   }
   async uploadFiles({
-    key = 'General',
+    key,
     subFolder,
+    baseFolder,
     ACL = ObjectCannedACL.private,
     files,
     isLargeFiles = false,
@@ -99,15 +100,18 @@ export class S3Service {
     isLargeFiles?: boolean;
     ACL?: ObjectCannedACL;
     subFolder: Types.ObjectId | string;
+    baseFolder: string;
     expires?: boolean;
   }) {
+  
+
     let urls: string[] = [];
     if (isLargeFiles) {
       urls = await Promise.all(
         files.map((file) =>
           this.uploadLargeFile({
             file,
-            key: `${key}/${randomUUID()}`,
+            key: randomUUID(),
             subFolder,
             ACL,
             expires,
@@ -119,9 +123,10 @@ export class S3Service {
         files.map((file) =>
           this.uploadFile({
             file,
-            key: `${key}/${randomUUID()}`,
+            key:randomUUID(),
             expires,
             subFolder,
+            baseFolder,
             ACL,
             isDiskStorage: false,
           }),

@@ -29,18 +29,38 @@ export class UserService {
     private redis: RedisService,
   ) {}
   //helpers
-  async generateTokens(user) {
+  async generateTokens(user: UserDocument) {
+    console.log(user.role);
+
     const Jti = randomUUID();
-    const accessToken = await this.jwt.generateAccessToken(
-      user._id,
-      user.email,
-      Jti,
-    );
-    const refreshToken = await this.jwt.generateRefreshToken(
-      user._id,
-      user.email,
-      Jti,
-    );
+    const accessToken =
+      user.role === 'admin'
+        ? await this.jwt.generateAccessToken(
+            user._id,
+            user.email,
+            Jti,
+            process.env.JWT_ACCESS_TOKEN_ADMIN!,
+          )
+        : await this.jwt.generateAccessToken(
+            user._id,
+            user.email,
+            Jti,
+            process.env.JWT_ACCESS_KEY!,
+          );
+    const refreshToken =
+      user.role === 'admin'
+        ? await this.jwt.generateRefreshToken(
+            user._id,
+            user.email,
+            Jti,
+            process.env.JWT_REFRESH_TOKEN_ADMIN!,
+          )
+        : await this.jwt.generateRefreshToken(
+            user._id,
+            user.email,
+            Jti,
+            process.env.JWT_REFRESH_KEY!,
+          );
     return { accessToken, refreshToken };
   }
   //api services
@@ -83,7 +103,7 @@ export class UserService {
     const { email, password } = body;
     const user = await this._userModel.findOne(
       { email },
-      { password: 1, email: 1 },
+      { password: 1, email: 1,role:1 },
     );
     if (!user) {
       throw new UnauthorizedException('invalid email/password');
