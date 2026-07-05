@@ -74,12 +74,12 @@ export class Product {
     type: String,
     required: true,
   })
-  mainImage: String;
+  mainImage: string;
   @Prop({
     type: [String],
     default: [],
   })
-  images: String[];
+  images: string[];
 
   @Prop({
     default: 0,
@@ -95,6 +95,11 @@ export class Product {
     default: 0,
   })
   ratingCount: number;
+  @Prop({
+    type: Date,
+    required: false,
+  })
+  deletedAt: Date;
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
@@ -112,6 +117,19 @@ export const ProductModel = MongooseModule.forFeatureAsync([
             lower: true,
             strict: true,
           });
+        }
+      });
+      schema.pre(['find', 'findOne', 'countDocuments'], function () {
+        const query = this.getQuery();
+        if (query.paranoid !== true) {
+          delete query.paranoid;
+          this.setQuery({
+            ...query,
+            deletedAt: { $exists: false },
+          });
+        } else {
+          delete query.paranoid;
+          this.setQuery(query);
         }
       });
       return schema;

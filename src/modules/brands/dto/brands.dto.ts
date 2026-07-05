@@ -1,5 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import {
+  IsMongoId,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -33,4 +34,8 @@ export class QueryDto {
   @IsString()
   @IsOptional()
   search?: string;
+}
+export class MongoIdDto {
+  @IsMongoId()
+  id: string;
 }

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { BrandRepo } from '../../repositories/brand.repo';
 import { createBrandDto, QueryDto, updateBrandDto } from './dto/brands.dto';
@@ -11,6 +12,7 @@ import { BrandDocument } from '../../DB/models/brand.model';
 import { randomUUID } from 'crypto';
 import { type UserDocument } from '../../DB/models/user.model';
 import { Types } from 'mongoose';
+import { DeleteQueryDto } from '../products/dto/product.dto';
 
 @Injectable()
 export class BrandsService {
@@ -27,7 +29,6 @@ export class BrandsService {
     if (isExistingBrand) {
       throw new BadRequestException('Brand already exists');
     }
-    console.log(file);
 
     const url = await this.s3Service.uploadFile({
       file,
@@ -130,5 +131,40 @@ export class BrandsService {
         : {},
     });
     return successfulResponse('Brands fetched successfully', 200, { brands });
+  }
+
+  async getBrandById(id: string) {
+    const brand = await this.brandRepo.findById(
+      Types.ObjectId.createFromHexString(id),
+    );
+    if (!brand) throw new NotFoundException('brand not found.');
+    return successfulResponse('brand retrieved successfully', 200, {
+      brand,
+    });
+  }
+
+  async deleteBrand(id: string, user: UserDocument, query: DeleteQueryDto) {
+    if (query.method === 'hard') {
+      const brand = await this.brandRepo.deleteOne({
+        _id: Types.ObjectId.createFromHexString(id),
+      });
+      if (!brand) throw new NotFoundException('brand Not Found');
+      await this.s3Service.deleteFile(brand.logo);
+      return successfulResponse(
+        'brand has been deleted(hard) successfully',
+        200,
+        { brand },
+      );
+    } else if (query.method === 'soft') {
+      const brand = await this.brandRepo.softDeleteOne({
+        _id: Types.ObjectId.createFromHexString(id),
+      });
+      if (!brand) throw new NotFoundException('brand Not Found');
+      return successfulResponse(
+        'brand has been deleted(soft)  successfully',
+        200,
+        { brand },
+      );
+    }
   }
 }

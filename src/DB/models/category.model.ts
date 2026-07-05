@@ -46,6 +46,10 @@ export class Category {
     updatedBy: { type: Types.ObjectId, ref: User.name, required: true },
   })
   updatedBy: Types.ObjectId;
+  @Prop({
+    deletedAt: { type: Date, required: false },
+  })
+  deletedAt: Date;
 }
 
 export const CategorySchema = SchemaFactory.createForClass(Category);
@@ -65,6 +69,19 @@ export const CategoryModel = MongooseModule.forFeatureAsync([
           });
         }
       });
+       schema.pre(['find', 'findOne', 'countDocuments'], function () {
+         const query = this.getQuery();
+         if (query.paranoid !== true) {
+           delete query.paranoid;
+           this.setQuery({
+             ...query,
+             deletedAt: { $exists: false },
+           });
+         } else {
+           delete query.paranoid;
+           this.setQuery(query);
+         }
+       });
       return schema;
     },
   },

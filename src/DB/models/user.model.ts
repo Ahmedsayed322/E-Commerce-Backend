@@ -83,7 +83,7 @@ export const UserSchema = SchemaFactory.createForClass(User);
 export type UserDocument = HydratedDocument<User>;
 export const UserModel = MongooseModule.forFeatureAsync([
   {
-    name: User.name, 
+    name: User.name,
     useFactory: () => {
       const schema = UserSchema;
       schema.pre('save', async function () {
@@ -96,6 +96,19 @@ export const UserModel = MongooseModule.forFeatureAsync([
       });
       schema.virtual('fullName').get(function () {
         return `${this.firstName} ${this.lastName}`;
+      });
+      schema.pre(['find', 'findOne', 'countDocuments'], function () {
+        const query = this.getQuery();
+        if (query.paranoid !== true) {
+          delete query.paranoid;
+          this.setQuery({
+            ...query,
+            deletedAt: { $exists: false },
+          });
+        } else {
+          delete query.paranoid;
+          this.setQuery(query);
+        }
       });
       return schema;
     },

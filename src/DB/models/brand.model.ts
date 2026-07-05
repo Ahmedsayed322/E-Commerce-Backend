@@ -12,6 +12,11 @@ import { User } from '../../common/decorators/user.decorator';
 })
 export class Brand {
   @Prop({
+    type: Date,
+    required: false,
+  })
+  deletedAt: Date;
+  @Prop({
     required: true,
     unique: true,
     trim: true,
@@ -68,6 +73,19 @@ export const BrandModel = MongooseModule.forFeatureAsync([
             lower: true,
             strict: true,
           });
+        }
+      });
+      schema.pre(['find', 'findOne', 'countDocuments'], function () {
+        const query = this.getQuery();
+        if (query.paranoid !== true) {
+          delete query.paranoid;
+          this.setQuery({
+            ...query,
+            deletedAt: { $exists: false },
+          });
+        } else {
+          delete query.paranoid;
+          this.setQuery(query);
         }
       });
       return schema;

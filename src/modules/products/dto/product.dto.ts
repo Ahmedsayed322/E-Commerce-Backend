@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsMongoId,
   IsNumber,
   IsOptional,
@@ -9,6 +10,10 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { DeleteQueryEnum } from '../../../common/enum/query.enum';
+import { AtLeastOne } from '../../../common/decorators/brand.decorator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Category } from '../../../DB/models/category.model';
 
 export class createProductDto {
   @IsString()
@@ -39,8 +44,20 @@ export class createProductDto {
   @IsMongoId()
   category: string;
 }
-// @AtLeastOne(['name', 'description'])
-// export class updateBrandDto extends PartialType(createBrandDto) {}
+export class DeleteQueryDto {
+  @IsEnum(DeleteQueryEnum)
+  method: string;
+}
+@AtLeastOne([
+  'title',
+  'description',
+  'price',
+  'discount',
+  'stock',
+  'brand',
+  'category',
+])
+export class updateProductDto extends PartialType(createProductDto) {}
 // export class QueryDto {
 //   @IsNumber()
 //   @IsPositive()

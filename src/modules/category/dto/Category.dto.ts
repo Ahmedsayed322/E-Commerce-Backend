@@ -21,8 +21,8 @@ export class createCategoryDto {
   @IsOptional()
   brands: string[];
 }
-// @AtLeastOne(['name', 'description'])
-// export class updateCategoryDto extends PartialType(createCategoryDto) {}
+@AtLeastOne(['name', 'brands'])
+export class updateCategoryDto extends PartialType(createCategoryDto) {}
 // export class QueryDto {
 //   @IsNumber()
 //   @IsPositive()

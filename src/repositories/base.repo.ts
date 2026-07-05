@@ -86,7 +86,7 @@ abstract class BaseRepository<T> {
       filter,
       { deletedAt: new Date() } as UpdateQuery<T>,
       {
-        new: true,
+        returnDocument: 'after',
         ...options,
       },
     );
